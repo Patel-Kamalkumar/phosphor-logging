@@ -436,7 +436,7 @@ sdbusplus::message::unix_fd Manager::getPEL(uint32_t pelID)
         throw common_error::InvalidArgument();
     }
 
-    scheduleFDClose(*fd);
+    //   scheduleFDClose(*fd);
 
     return *fd;
 }
