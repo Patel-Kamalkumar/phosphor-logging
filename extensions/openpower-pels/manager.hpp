@@ -562,6 +562,8 @@ class Manager : public PELInterface
      * @brief The file descriptor returned by inotify_add_watch().
      */
     int _pelFileDeleteWatchFD = -1;
+
+    std::optional<int> fd;
 };
 
 } // namespace pels

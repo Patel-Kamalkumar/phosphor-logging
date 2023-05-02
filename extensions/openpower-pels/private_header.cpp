@@ -80,12 +80,12 @@ PrivateHeader::PrivateHeader(Stream& pel) :
     catch (const std::exception& e)
     {
         log<level::ERR>(
-            fmt::format("Cannot unflatten privatej header: {}", e.what())
+            fmt::format("Cannot unflatten private header: {}", e.what())
                 .c_str());
         _valid = false;
     }
 }
-std::optional<std::string> PrivateHeader::getJSON() const
+std::optional<std::string> PrivateHeader::getJSON(uint8_t creatorID) const
 {
     char tmpPhVal[50];
     sprintf(tmpPhVal, "%02X/%02X/%02X%02X %02X:%02X:%02X",
@@ -110,8 +110,8 @@ std::optional<std::string> PrivateHeader::getJSON() const
     jsonInsert(ph, pv::sectionVer, getNumberString("%d", privateHeaderVersion),
                1);
     jsonInsert(ph, pv::subSection, getNumberString("%d", _header.subType), 1);
-    jsonInsert(ph, pv::createdBy, getNumberString("0x%X", _header.componentID),
-               1);
+    jsonInsert(ph, pv::createdBy,
+               getComponentName(_header.componentID, creatorID), 1);
     jsonInsert(ph, "Created at", phCreateTStr, 1);
     jsonInsert(ph, "Committed at", phCommitTStr, 1);
     jsonInsert(ph, "Creator Subsystem", creator, 1);

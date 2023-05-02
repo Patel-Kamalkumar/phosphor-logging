@@ -418,7 +418,6 @@ void Manager::createPEL(const std::string& message, uint32_t obmcLogID,
 sdbusplus::message::unix_fd Manager::getPEL(uint32_t pelID)
 {
     Repository::LogID id{Repository::LogID::Pel(pelID)};
-    std::optional<int> fd;
 
     log<level::DEBUG>("getPEL", entry("PEL_ID=0x%X", pelID));
 
@@ -450,6 +449,7 @@ void Manager::scheduleFDClose(int fd)
 
 void Manager::closeFD(int fd, sdeventplus::source::EventBase& /*source*/)
 {
+    std::cout << "KK closing FD from Dbus\n";
     close(fd);
     _fdCloserEventSource.reset();
 }
@@ -615,7 +615,6 @@ void Manager::pelFileDeleted(sdeventplus::source::IO& /*io*/, int /*fd*/,
                 {
                     auto idString = filename.substr(pos + 1);
                     auto pelID = std::stoul(idString, nullptr, 16);
-
                     Repository::LogID id{Repository::LogID::Pel(pelID)};
                     auto removedLogID = _repo.remove(id);
                     if (removedLogID)

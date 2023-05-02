@@ -253,6 +253,33 @@
         },
 
         {
+            "Name": "xyz.openbmc_project.Certs.Error.InvalidCertificate",
+            "Subsystem": "user_error",
+            "Severity": "predictive",
+
+            "SRC": {
+                "ReasonCode": "0x100C",
+                "Words6To9": {}
+            },
+
+            "Callouts": [
+                {
+                    "CalloutList": [
+                        {
+                            "Priority": "high",
+                            "Procedure": "next_level_support"
+                        }
+                    ]
+                }
+            ],
+
+            "Documentation": {
+                "Description": "Certificate verification failed",
+                "Message": "Certificate verification failed"
+            }
+        },
+
+        {
             "Name": "org.open_power.Logging.Error.SentBadPELToHost",
             "Subsystem": "bmc_firmware",
             "Severity": "non_error",
@@ -809,6 +836,54 @@
         },
 
         {
+            "Name": "org.open_power.Faultlog.Error.DeconfiguredHW",
+            "Subsystem": "cec_hardware",
+            "Severity": "predictive",
+            "ComponentID": "0xf100",
+            "SRC": {
+                "ReasonCode": "0xf138",
+                "Words6To9": {
+                    "6": {
+                        "Description": "Number of guard records with error object",
+                        "AdditionalDataPropSource": "GUARD_WITH_ASSOC_ERROR_COUNT"
+                    },
+                    "7": {
+                        "Description": "Number of guard records with no error object",
+                        "AdditionalDataPropSource": "GUARD_WITH_NO_ASSOC_ERROR_COUNT"
+                    },
+                    "8": {
+                        "Description": "Number of deconfigured records",
+                        "AdditionalDataPropSource": "DECONFIG_RECORD_COUNT"
+                    },
+                    "9": {
+                        "Description": "Number of unresolved pels count",
+                        "AdditionalDataPropSource": "UNRESOLVED_PEL_WITH_DECONFIG_BIT_COUNT"
+                    }
+                }
+            },
+            "Callouts": [
+                {
+                    "CalloutList": [
+                        {
+                            "Priority": "high",
+                            "Procedure": "detected_issue_need_service"
+                        }
+                    ]
+                }
+            ],
+            "Documentation": {
+                "Description": "Firmware detected either a FRU deconfigured And/Or guard record",
+                "Message": "Firmware detected either a FRU deconfigured And/Or guard record",
+                "Notes": [
+                    "Either Guard And/Or Deconfiguration records found during periodic check ",
+                    "as part of the NAG event. Look into the BMC Nag dump for more details. ",
+                    "This is a reminder for servicing faulty hardware pending service present ",
+                    "in the system."
+                ]
+            }
+        },
+
+        {
             "Name": "xyz.openbmc_project.State.Error.HostNotRunning",
             "Subsystem": "cec_sp_hostboot_iface",
             "ComponentID": "0x3400",
@@ -1256,6 +1331,37 @@
         },
 
         {
+            "Name": "xyz.openbmc_project.State.Error.TpmMeasurementFail",
+            "Subsystem": "bmc_firmware",
+            "ComponentID": "0x3400",
+            "SRC": {
+                "ReasonCode": "0x3415",
+                "Words6To9": {}
+            },
+            "Callouts": [
+                {
+                    "CalloutList": [
+                        {
+                            "Priority": "high",
+                            "Procedure": "next_level_support"
+                        }
+                    ]
+                }
+            ],
+            "Documentation": {
+                "Description": "TPM measurement failed",
+                "Message": "The system has detected a failure in the TPM measurement.",
+                "Notes": [
+                    "This error occurs when /sys/class/tpm/tpm0/pcr-sha256/0",
+                    "is missing or has a value of 0, indicating a potential compromise",
+                    "of the system's boot process.",
+                    "Please contact your system administrator or next level support",
+                    "to investigate and resolve the issue."
+                ]
+            }
+        },
+
+        {
             "Name": "org.open_power.Processor.Error.SbeChipOpFailure",
             "Subsystem": "processor_chip",
             "ComponentID": "0x3500",
@@ -1406,6 +1512,19 @@
                         {
                             "Priority": "low",
                             "LocCode": "P0-C96"
+                        }
+                    ]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [
+                        {
+                            "Priority": "low",
+                            "LocCode": "P0"
+                        },
+                        {
+                            "Priority": "low",
+                            "LocCode": "P0-C5"
                         }
                     ]
                 }
@@ -1654,6 +1773,27 @@
                     "CALLOUT_INVENTORY_PATH to the additional data, and set the",
                     "CALLOUT_PRIORITY to something other than high."
                 ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1686,6 +1826,27 @@
                     "specific fault, STATUS_* details, and code level in the ",
                     "AdditionalData section."
                 ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1717,6 +1878,26 @@
                     "the power supply, or any hardware between it and the ",
                     "BMC. Reporting the error should be passing in a call ",
                     "out using CALLOUT_DEVICE_PATH."
+                ]
+            },
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
                 ]
             }
         },
@@ -1754,6 +1935,27 @@
                     "location code in this callout is obtained from ",
                     "the passed in CALLOUT_INVENTORY_PATH value."
                 ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1785,6 +1987,27 @@
                     "system is not supported. This could be caused by ",
                     "mismatched models, less than expected number of power ",
                     "supplies, or other unsupported characteristics."
+                ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
                 ]
             }
         },
@@ -1818,6 +2041,27 @@
                     "specific fault, STATUS_* details, and code level in the ",
                     "AdditionalData section."
                 ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1844,6 +2088,27 @@
             "Documentation": {
                 "Description": "Power Supply output over-current power fault",
                 "Message": "A power supply has indicated an output over-current condition."
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1874,6 +2139,27 @@
                     "Input power was lost while system powered on.",
                     "The CalloutList should use the ACMODUL symbolic FRU."
                 ]
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1901,6 +2187,27 @@
                 "Description": "A power supply fault is potentially preventing the power supply from allowing the system to power on.",
                 "Message": "Power supply PSKill_fault",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    }
+                ]
             }
         },
 
@@ -1927,6 +2234,31 @@
                 "Description": "A power off was issued because a power fault was detected",
                 "Message": "A power off was issued because a power fault was detected",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -1968,6 +2300,15 @@
                             "LocCode": "P0"
                         }
                     ]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [
+                        {
+                            "Priority": "high",
+                            "LocCode": "P0"
+                        }
+                    ]
                 }
             ],
 
@@ -1975,6 +2316,31 @@
                 "Description": "A power off was issued because a regulator for standby power faulted",
                 "Message": "A power off was issued because a regulator for standby power faulted",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -2457,6 +2823,31 @@
                 "Description": "The power sequencer chip detected a PGOOD fault",
                 "Message": "The power sequencer chip detected a PGOOD fault",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -3543,6 +3934,31 @@
                 "Description": "The power sequencer chip detected a voltage fault",
                 "Message": "The power sequencer chip detected a voltage fault",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -3744,6 +4160,31 @@
                 "Description": "The power sequencer chip detected a fault",
                 "Message": "The power sequencer chip detected a fault",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -3769,6 +4210,31 @@
                 "Description": "System power failed to turn on within timeout period",
                 "Message": "System power failed to turn on within timeout period",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -3794,6 +4260,31 @@
                 "Description": "System power failed to turn off within timeout period",
                 "Message": "System power failed to turn off within timeout period",
                 "Notes": []
+            },
+
+            "JournalCapture": {
+                "Sections": [
+                    {
+                        "SyslogID": "phosphor-psu-monitor",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-power-control",
+                        "NumLines": 30
+                    },
+                    {
+                        "SyslogID": "phosphor-chassis-state-manager",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "systemd",
+                        "NumLines": 15
+                    },
+                    {
+                        "SyslogID": "phosphor-regulators",
+                        "NumLines": 5
+                    }
+                ]
             }
         },
 
@@ -3965,6 +4456,20 @@
                             "LocCode": "P1"
                         }
                     ]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [
+                        {
+                            "Priority": "high",
+                            "SymbolicFRUTrusted": "air_mover",
+                            "UseInventoryLocCode": true
+                        },
+                        {
+                            "Priority": "low",
+                            "LocCode": "P0"
+                        }
+                    ]
                 }
             ],
 
@@ -4005,6 +4510,10 @@
                 {
                     "System": "ibm,everest",
                     "CalloutList": [{ "Priority": "medium", "LocCode": "P1" }]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [{ "Priority": "medium", "LocCode": "P0" }]
                 }
             ],
 
@@ -4060,6 +4569,10 @@
                         { "Priority": "medium", "LocCode": "P1" },
                         { "Priority": "low", "LocCode": "P0" }
                     ]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [{ "Priority": "high", "LocCode": "P0" }]
                 }
             ],
 
@@ -4113,6 +4626,10 @@
                         { "Priority": "medium", "LocCode": "P1" },
                         { "Priority": "low", "LocCode": "P0" }
                     ]
+                },
+                {
+                    "System": "ibm,bonnell",
+                    "CalloutList": [{ "Priority": "high", "LocCode": "P0" }]
                 }
             ],
 
@@ -4793,7 +5310,7 @@
         },
 
         {
-            "Name": "com.ibm.VPD.Error.BlankSystemVPD",
+            "Name": "com.ibm.VPD.Error.DefaultValue",
             "Subsystem": "cec_vpd",
             "ComponentID": "0x4000",
 
@@ -4814,12 +5331,11 @@
             ],
 
             "Documentation": {
-                "Description": "System VPD restore failed",
-                "Message": "A system VPD restoration error occurred.",
+                "Description": "Default value found on VPD.",
+                "Message": "Found default VPD.",
                 "Notes": [
-                    "This error occurs when restoring of system VPD fails.",
-                    "The FRU path and reason for failure is captured in",
-                    "additional data."
+                    "This error occurs when a default value found on VPD.",
+                    "Details regarding failure are captured in additional data."
                 ]
             }
         },
@@ -4910,7 +5426,7 @@
         },
 
         {
-            "Name": "com.ibm.VPD.Error.SystemVPDMismatch",
+            "Name": "com.ibm.VPD.Error.Mismatch",
             "Subsystem": "cec_vpd",
             "ComponentID": "0x4000",
 
@@ -4931,13 +5447,12 @@
             ],
 
             "Documentation": {
-                "Description": "System VPD restore failed",
-                "Message": "A system VPD restoration error occurred.",
+                "Description": "VPD mismatch found between primary and backup",
+                "Message": "Error occurred due to VPD mismatch between primary and backup.",
                 "Notes": [
-                    "This error occurs when restoring of system VPD fails due to",
-                    "mismatch in cache data and hardware data.",
-                    "The record and keyword causing the failure is captured in",
-                    "additional data."
+                    "This error occurs when there is a data mismatch between ",
+                    "primary and backup VPD.",
+                    "Details regarding the failure are captured in additional data."
                 ]
             }
         },
@@ -5084,7 +5599,7 @@
         },
 
         {
-            "Name": "org.open_power.Host.Boot.Error.WatchdogTimeout",
+            "Name": "org.open_power.Host.Boot.Error.WatchdogTimedOut",
             "Subsystem": "cec_sp_hostboot_iface",
 
             "SRC": {
