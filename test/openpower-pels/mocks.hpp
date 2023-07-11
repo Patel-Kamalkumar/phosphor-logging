@@ -18,7 +18,13 @@ namespace pels
 class MockDataInterface : public DataInterfaceBase
 {
   public:
-    MockDataInterface() {}
+    MockDataInterface()
+    {
+        ON_CALL(*this, checkDumpStatus)
+            .WillByDefault(
+                ::testing::Return(std::vector<bool>({false, false, false})));
+    }
+
     MOCK_METHOD(std::string, getMachineTypeModel, (), (const override));
     MOCK_METHOD(std::string, getMachineSerialNumber, (), (const override));
     MOCK_METHOD(std::string, getServerFWVersion, (), (const override));
@@ -69,6 +75,11 @@ class MockDataInterface : public DataInterfaceBase
     void setHMCManaged(bool managed)
     {
         _hmcManaged = managed;
+    }
+
+    void fruPresent(const std::string& locationCode)
+    {
+        setFruPresent(locationCode);
     }
 };
 
@@ -191,8 +202,8 @@ class MockHostInterface : public HostInterface
         int fd = open(_fifo.c_str(), O_NONBLOCK | O_RDWR);
         EXPECT_TRUE(fd >= 0) << "Unable to open FIFO";
 
-        auto callback = [this](sdeventplus::source::IO& source, int fd,
-                               uint32_t events) {
+        auto callback =
+            [this](sdeventplus::source::IO& source, int fd, uint32_t events) {
             this->receive(source, fd, events);
         };
 

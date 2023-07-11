@@ -115,14 +115,20 @@ void Repository::restore()
                     }
                 }
 
-                PELAttributes attributes{dirEntry.path(),
-                                         getFileDiskSize(dirEntry.path()),
-                                         pel.privateHeader().creatorID(),
-                                         pel.userHeader().subsystem(),
-                                         pel.userHeader().severity(),
-                                         pel.userHeader().actionFlags(),
-                                         pel.hostTransmissionState(),
-                                         pel.hmcTransmissionState()};
+                PELAttributes attributes{
+                    dirEntry.path(),
+                    getFileDiskSize(dirEntry.path()),
+                    pel.privateHeader().creatorID(),
+                    pel.userHeader().subsystem(),
+                    pel.userHeader().severity(),
+                    pel.userHeader().actionFlags(),
+                    pel.hostTransmissionState(),
+                    pel.hmcTransmissionState(),
+                    pel.plid(),
+                    pel.getDeconfigFlag(),
+                    pel.getGuardFlag(),
+                    getMillisecondsSinceEpoch(
+                        pel.privateHeader().createTimestamp())};
 
                 using pelID = LogID::Pel;
                 using obmcID = LogID::Obmc;
@@ -173,14 +179,19 @@ void Repository::add(std::unique_ptr<PEL>& pel)
 
     write(*(pel.get()), path);
 
-    PELAttributes attributes{path,
-                             getFileDiskSize(path),
-                             pel->privateHeader().creatorID(),
-                             pel->userHeader().subsystem(),
-                             pel->userHeader().severity(),
-                             pel->userHeader().actionFlags(),
-                             pel->hostTransmissionState(),
-                             pel->hmcTransmissionState()};
+    PELAttributes attributes{
+        path,
+        getFileDiskSize(path),
+        pel->privateHeader().creatorID(),
+        pel->userHeader().subsystem(),
+        pel->userHeader().severity(),
+        pel->userHeader().actionFlags(),
+        pel->hostTransmissionState(),
+        pel->hmcTransmissionState(),
+        pel->plid(),
+        pel->getDeconfigFlag(),
+        pel->getGuardFlag(),
+        getMillisecondsSinceEpoch(pel->privateHeader().createTimestamp())};
 
     using pelID = LogID::Pel;
     using obmcID = LogID::Obmc;
@@ -398,13 +409,12 @@ void Repository::setPELHostTransState(uint32_t pelID, TransmissionState state)
     {
         PELUpdateFunc func = [state](PEL& pel) {
             pel.setHostTransmissionState(state);
+            return true;
         };
 
         try
         {
             updatePEL(attr->second.path, func);
-
-            attr->second.hostState = state;
         }
         catch (const std::exception& e)
         {
@@ -425,13 +435,12 @@ void Repository::setPELHMCTransState(uint32_t pelID, TransmissionState state)
     {
         PELUpdateFunc func = [state](PEL& pel) {
             pel.setHMCTransmissionState(state);
+            return true;
         };
 
         try
         {
             updatePEL(attr->second.path, func);
-
-            attr->second.hmcState = state;
         }
         catch (const std::exception& e)
         {
@@ -453,9 +462,28 @@ void Repository::updatePEL(const fs::path& path, PELUpdateFunc updateFunc)
 
     if (pel.valid())
     {
-        updateFunc(pel);
+        if (updateFunc(pel))
+        {
+            // Three attribute fields can change post creation from
+            // an updatePEL call:
+            //  - hmcTransmissionState - When HMC acks a PEL
+            //  - hostTransmissionState - When host acks a PEL
+            //  - deconfig flag - Can be cleared for PELs that call out
+            //                    hotplugged FRUs.
+            // Make sure they're up to date.
+            LogID id{LogID::Pel(pel.id())};
+            auto attr =
+                std::find_if(_pelAttributes.begin(), _pelAttributes.end(),
+                             [&id](const auto& a) { return a.first == id; });
+            if (attr != _pelAttributes.end())
+            {
+                attr->second.hmcState = pel.hmcTransmissionState();
+                attr->second.hostState = pel.hostTransmissionState();
+                attr->second.deconfig = pel.getDeconfigFlag();
+            }
 
-        write(pel, path);
+            write(pel, path);
+        }
     }
     else
     {
@@ -566,18 +594,19 @@ std::vector<Repository::AttributesReference>
 {
     std::vector<Repository::AttributesReference> attributes;
 
-    std::for_each(
-        _pelAttributes.begin(), _pelAttributes.end(),
-        [&attributes](auto& pelEntry) { attributes.push_back(pelEntry); });
+    std::for_each(_pelAttributes.begin(), _pelAttributes.end(),
+                  [&attributes](auto& pelEntry) {
+        attributes.push_back(pelEntry);
+    });
 
     std::sort(attributes.begin(), attributes.end(),
               [order](const auto& left, const auto& right) {
-                  if (order == SortOrder::ascending)
-                  {
-                      return left.get().second.path < right.get().second.path;
-                  }
-                  return left.get().second.path > right.get().second.path;
-              });
+        if (order == SortOrder::ascending)
+        {
+            return left.get().second.path < right.get().second.path;
+        }
+        return left.get().second.path > right.get().second.path;
+    });
 
     return attributes;
 }
@@ -696,18 +725,18 @@ void Repository::removePELs(const IsOverLimitFunc& isOverLimit,
     //   Pass 4: delete all PELs
     static const std::vector<std::function<bool(const PELAttributes& pel)>>
         stateChecks{[](const auto& pel) {
-                        return pel.hmcState == TransmissionState::acked;
+        return pel.hmcState == TransmissionState::acked;
                     },
 
                     [](const auto& pel) {
-                        return pel.hostState == TransmissionState::acked;
-                    },
+        return pel.hostState == TransmissionState::acked;
+        },
 
-                    [](const auto& pel) {
-                        return pel.hostState == TransmissionState::sent;
-                    },
+        [](const auto& pel) {
+        return pel.hostState == TransmissionState::sent;
+        },
 
-                    [](const auto& /*pel*/) { return true; }};
+        [](const auto& /*pel*/) { return true; }};
 
     for (const auto& stateCheck : stateChecks)
     {

@@ -190,6 +190,11 @@ uint8_t getSRCType(const nlohmann::json& src, const std::string& name)
     return type;
 }
 
+bool getSRCDeconfigFlag(const nlohmann::json& src)
+{
+    return src["DeconfigFlag"].get<bool>();
+}
+
 std::optional<std::map<SRC::WordNum, SRC::AdditionalDataField>>
     getSRCHexwordFields(const nlohmann::json& src, const std::string& name)
 {
@@ -555,10 +560,10 @@ std::vector<RegistryCallout>
     const auto& callouts = json["CalloutsWithTheirADValues"];
 
     // find the entry with that AD value
-    auto it = std::find_if(
-        callouts.begin(), callouts.end(), [adValue](const nlohmann::json& j) {
-            return *adValue == j["ADValue"].get<std::string>();
-        });
+    auto it = std::find_if(callouts.begin(), callouts.end(),
+                           [adValue](const nlohmann::json& j) {
+        return *adValue == j["ADValue"].get<std::string>();
+    });
 
     if (it == callouts.end())
     {
@@ -653,13 +658,12 @@ std::optional<Entry> Registry::lookup(const std::string& name, LookupType type,
     auto& reg = (_registry) ? _registry : registryTmp;
     const auto& registry = reg.value();
     // Find an entry with this name in the PEL array.
-    auto e = std::find_if(
-        registry["PELs"].begin(), registry["PELs"].end(),
-        [&name, &type](const auto& j) {
-            return ((name == j["Name"] && type == LookupType::name) ||
-                    (name == j["SRC"]["ReasonCode"] &&
-                     type == LookupType::reasonCode));
-        });
+    auto e = std::find_if(registry["PELs"].begin(), registry["PELs"].end(),
+                          [&name, &type](const auto& j) {
+        return (
+            (name == j["Name"] && type == LookupType::name) ||
+            (name == j["SRC"]["ReasonCode"] && type == LookupType::reasonCode));
+    });
 
     if (e != registry["PELs"].end())
     {
@@ -733,6 +737,11 @@ std::optional<Entry> Registry::lookup(const std::string& name, LookupType type,
             if (src.contains("SymptomIDFields"))
             {
                 entry.src.symptomID = helper::getSRCSymptomIDFields(src, name);
+            }
+
+            if (src.contains("DeconfigFlag"))
+            {
+                entry.src.deconfigFlag = helper::getSRCDeconfigFlag(src);
             }
 
             auto& doc = (*e)["Documentation"];

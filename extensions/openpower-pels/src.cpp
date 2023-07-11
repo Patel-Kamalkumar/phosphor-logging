@@ -350,6 +350,11 @@ SRC::SRC(const message::Entry& regEntry, const AdditionalData& additionalData,
     setBMCPosition();
     setMotherboardCCIN(dataIface);
 
+    if (regEntry.src.deconfigFlag)
+    {
+        setErrorStatusFlag(ErrorStatusFlags::deconfigured);
+    }
+
     // Fill in the last 4 words from the AdditionalData property contents.
     setUserDefinedHexWords(regEntry, additionalData);
 
@@ -475,6 +480,17 @@ bool SRC::isBMCSRC() const
         uint8_t errorType = strtoul(as.substr(0, 2).c_str(), nullptr, 16);
         return (errorType == static_cast<uint8_t>(SRCType::bmcError) ||
                 errorType == static_cast<uint8_t>(SRCType::powerError));
+    }
+    return false;
+}
+
+bool SRC::isHostbootSRC() const
+{
+    auto as = asciiString();
+    if (as.length() >= 2)
+    {
+        uint8_t errorType = strtoul(as.substr(0, 2).c_str(), nullptr, 16);
+        return errorType == static_cast<uint8_t>(SRCType::hostbootError);
     }
     return false;
 }
@@ -736,6 +752,10 @@ std::optional<std::string> SRC::getJSON(message::Registry& registry,
                        _hexData[3] &
                        static_cast<uint32_t>(ErrorStatusFlags::terminateFwErr)),
                    1);
+    }
+
+    if (isBMCSRC() || isHostbootSRC())
+    {
         jsonInsert(ps, "Deconfigured",
                    pv::boolString.at(
                        _hexData[3] &
@@ -1553,8 +1573,8 @@ uint32_t SRC::getProgressCode(std::vector<uint8_t>& rawProgressSRC)
 
         if (std::all_of(progressCodeString.begin(), progressCodeString.end(),
                         [](char c) {
-                            return std::isxdigit(static_cast<unsigned char>(c));
-                        }))
+            return std::isxdigit(static_cast<unsigned char>(c));
+            }))
         {
             progressCode = std::stoul(progressCodeString, nullptr, 16);
         }
